@@ -1,5 +1,6 @@
 # domain-check
-version 1.1
+
+version 2.0
 
 A bash script to check which tld's a particular domain is available under.
 
@@ -21,21 +22,22 @@ ln -sT domain-check/dmnchk ~/bin/dmnchk # assuming ~/bin is in your $PATH
 ```
 USAGE:
   dmnchk [options] domains(without tld extentions)
- 
-EXAMPLE: 
+
+EXAMPLE:
   dmnchk purple
-Sample Output: 
-  purple.com : available
-  purple.net : available
-  purple.ac : available
+
+Sample Output:
+  purple.com : AVAILABLE
+  purple.net : TAKEN (from: Go Daddy, LLC)
+  purple.ac  : UNKNOWN
  etc.
- 
+
 OPTIONS:
-  -c classic domains only .com .net .org .biz
-  -a search all (include nonenglish tlds)
+  -l list all tlds
+  -a search all (include every tld)
+  -i display available results only
+  -s output as csv
   -h display this help message
-  -l list all tlds in list (can be combined with -a)
-  -u update domain list
 ```
 
 ##To Do##
