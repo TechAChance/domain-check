@@ -12,75 +12,94 @@ print_debug() {
     echo "[DEBUG] $@"
   fi
 }
-usage () {
-		echo "USAGE:"
-		echo "  dmnchk [options] domains(without tld extentions)"
-		echo " "
-		echo "EXAMPLE: "
-		echo "  dmnchk purple"
-		echo " "
-		echo "Sample Output: "
-		echo "  purple.com : AVAILABLE"
-		echo "  purple.net : TAKEN (from: Go Daddy, LLC)"
-		echo "  purple.ac  : UNKNOWN"
-		echo " etc."
-		echo " "
-		echo "OPTIONS:"
-    echo "  -l list all tlds"
-		echo "  -a search all (include every tld)"
-		echo "  -i display available results only"
-    echo "  -s output as csv"
-    echo "  -h display this help message"
+usage() {
+  echo "USAGE:"
+  echo "  dmnchk [options] [domain (without tld extentions)]"
+  echo " "
+  echo "OPTIONS:"
+  echo "  -l : list tlds (no check of availability)"
+  echo "  -a : all tlds, not only most common"
+  echo "  -i : display 'available' domains only"
+  echo "  -s : output as csv instead of text"
+  echo "  -h : display this help message"
+  echo " "
+  echo " With no option, the tool will check most common tlds."
+  echo " "
+  echo "EXAMPLES: "
+  echo " * list most common extension                      : dmnchk -l"
+  echo " * list all existing extensions                    : dmnchk -l -a"
+  echo " * check most common extension for domain 'mydom'  : dmnchk mydom"
+  echo " * check all existing extensions for domain 'mydom': dmnchk -a mydom"
+  echo " "
+  echo "Sample Output: "
+  echo "  ..."
+  echo "  mydom.biz               : AVAILABLE"
+  echo "  mydom.blog              : AVAILABLE"
+  echo "  mydom.cc                : TAKEN (from: Key-Systems GmbH)"
+  echo "  mydom.cloud             : TAKEN (from: Tucows Domains Inc.)"
+  echo "  mydom.com               : TAKEN (from: Gabia, Inc.)"
+  echo "  mydom.company           : AVAILABLE"
+  echo "  mydom.dev               : AVAILABLE"
+  echo "  mydom.digital           : AVAILABLE"
+  echo "  mydom.eu                : TAKEN (from: Realtime Register B.V.)"
+  echo "  mydom.expert            : AVAILABLE"
+  echo "  mydom.fr                : TAKEN (from: GANDI)"
+  echo "  mydom.global            : AVAILABLE"
+  echo "  mydom.group             : AVAILABLE"
+  echo "  mydom.in                : AVAILABLE"
+  echo "  mydom.info              : TAKEN (from: GoDaddy.com, LLC)"
+  echo "  ..."
+
 }
 
 ####################################################################################################
 
 if [ "$#" == "0" ]; then
-	usage
-	exit 1
+  usage
+  exit 1
 fi
 
 ####################################################################################################
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-	TARGET="$(readlink "$SOURCE")"
-	if [[ $SOURCE == /* ]]; then
-		SOURCE="$TARGET"
-	else
-		SCRIPT_DIR="$(dirname "$SOURCE")"
-		SOURCE="$SCRIPT_DIR/$TARGET" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-	fi
+  TARGET="$(readlink "$SOURCE")"
+  if [[ $SOURCE == /* ]]; then
+    SOURCE="$TARGET"
+  else
+    SCRIPT_DIR="$(dirname "$SOURCE")"
+    SOURCE="$SCRIPT_DIR/$TARGET" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+  fi
 done
 scriptPath="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 while getopts ":seialh" opt; do
-	case $opt in
-	h)
+  case $opt in
+  h)
     usage
-		exit 1
-		;;
-	l)
-		LIST=true
-		;;
+    exit 1
+    ;;
+  l)
+    LIST=true
+    ;;
   i)
     AVAILABLE_ONLY=true
     ;;
-	[ae])
-		EXTENDED=true
-		;;
+  [ae])
+    EXTENDED=true
+    ;;
   s)
     EXPORT_CSV=true
     ;;
-	\?)
-		echo "Invalid option: -$OPTARG" >&2
-		;;
-	esac
+  \?)
+    echo "Invalid option: -$OPTARG" >&2
+    ;;
+  esac
 done
 
 shift $(($OPTIND - 1))
 if [ "$#" == "0" ] && [ "$LIST" != true ]; then
-	echo "No domain to check!"
-	exit 1
+  echo "No domain to check!"
+  exit 1
 fi
 
 DOMAIN_NAME=$1
@@ -89,15 +108,15 @@ DOMAIN_NAME_SIZE=${#DOMAIN_NAME}
 ####################################################################################################
 ####################################################################################################
 function update_tlds() {
-		echo "list is updating, this may take a while" >&2
-		wget -qP ${scriptPath}/ https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-		tail -n +2 ${scriptPath}/tlds-alpha-by-domain.txt >${scriptPath}/extendedalpha
-		grep -v "XN--" ${scriptPath}/extendedalpha >${scriptPath}/tlds-alpha-by-domain.txt
-		mv ${scriptPath}/tlds-alpha-by-domain.txt ${scriptPath}/extendedalpha
+  echo "list is updating, this may take a while" >&2
+  wget -qP ${scriptPath}/ https://data.iana.org/TLD/tlds-alpha-by-domain.txt
+  tail -n +2 ${scriptPath}/tlds-alpha-by-domain.txt >${scriptPath}/extendedalpha
+  grep -v "XN--" ${scriptPath}/extendedalpha >${scriptPath}/tlds-alpha-by-domain.txt
+  mv ${scriptPath}/tlds-alpha-by-domain.txt ${scriptPath}/extendedalpha
 }
 
-function who_is () {
-  whois $1 2> /dev/null
+function who_is() {
+  whois $1 2>/dev/null
 }
 
 function check_domain() {
@@ -106,13 +125,13 @@ function check_domain() {
   local PADDING=$(($DOMAIN_NAME_SIZE + 18))
   ## egrep TO BE IMPROVED
   ## echo "$WHOIS" | egrep -q 'No match for|NOT FOUND|Not Found|not found|Status: AVAILABLE|^Available|Domain Status: free^|No Data Found|has not been regi|No entri|No Object Found|available for registration|The queried object does not exist|This domain name has not been registered|no matching objects found'
-	host $DOMAIN | egrep -q 'not found'
+  host $DOMAIN | egrep -q 'not found'
   NOT_FOUND=$?
-	if [ $NOT_FOUND -eq 0 ]; then
+  if [ $NOT_FOUND -eq 0 ]; then
     if [ "$EXPORT_CSV" = false ]; then
-		  printf "%-${PADDING}s : AVAILABLE\n"  "$DOMAIN"
+      printf "%-${PADDING}s : AVAILABLE\n" "$DOMAIN"
     else
-      printf "%s;AVAILABLE;\n"  "$DOMAIN"
+      printf "%s;AVAILABLE;\n" "$DOMAIN"
     fi
 
   else
@@ -132,33 +151,33 @@ function check_domain() {
         return 0
       fi
 
-      REGISTRAR=$( echo "$WHOIS" | grep 'Registrar:' | head -n1)
+      REGISTRAR=$(echo "$WHOIS" | grep 'Registrar:' | head -n1)
       REGISTRAR="${REGISTRAR##*Registrar:}"
 
       ## Specific cases .it, .eu, .fr, ....
       if [ ! "$REGISTRAR" ]; then
         # for .it
-        REGISTRAR=$( echo "$WHOIS" | grep -A1 "Registrar" | grep 'Organization:' | head -n1)
+        REGISTRAR=$(echo "$WHOIS" | grep -A1 "Registrar" | grep 'Organization:' | head -n1)
         print_debug $REGISTRAR
         REGISTRAR="${REGISTRAR##*Organization:}"
         print_debug $REGISTRAR
       fi
       if [ ! "$REGISTRAR" ]; then
         # for .eu
-        REGISTRAR=$( echo "$WHOIS" | grep -A1 "Registrar:" | grep 'Name:' | head -n1)
+        REGISTRAR=$(echo "$WHOIS" | grep -A1 "Registrar:" | grep 'Name:' | head -n1)
         print_debug $REGISTRAR
         REGISTRAR="${REGISTRAR##*Name:}"
         print_debug $REGISTRAR
       fi
       if [ ! "$REGISTRAR" ]; then
         # for .fr
-        REGISTRAR=$( echo "$WHOIS" | grep "registrar:" | head -n1)
+        REGISTRAR=$(echo "$WHOIS" | grep "registrar:" | head -n1)
         print_debug $REGISTRAR
         REGISTRAR="${REGISTRAR##*registrar:}"
         print_debug $REGISTRAR
       fi
 
-      REGISTRAR="$(echo $REGISTRAR| sed 's/^[[:blank:]]*//;s/[[:blank:]]*$//' )"
+      REGISTRAR="$(echo $REGISTRAR | sed 's/^[[:blank:]]*//;s/[[:blank:]]*$//')"
 
       ## next part TO BE IMPROVED
       if [ "$REGISTRAR" ]; then
@@ -175,51 +194,51 @@ function check_domain() {
         fi
       fi
     fi
-	fi
+  fi
 }
 ####################################################################################################
 ####################################################################################################
 ## Defaults tlds
 DOMAINS=(
-'agency'
-'ai'
-'app'
-'art'
-'biz'
-'blog'
-'cloud'
-'com'
-'company'
-'dev'
-'digital'
-'eu'
-'expert'
-'fr'
-'global'
-'group'
-'in'
-'info'
-'io'
-'it'
-'live'
-'mc'
-'me'
-'net'
-'online'
-'org'
-# 'shop' ## always a network connection errror when performing a whois on .shop
-'site'
-'space'
-'store'
-'stream'
-'systems'
-'tech'
-'uk'
-'website'
-'world'
-'xyz'
-'trade'
-'cc'
+  'agency'
+  'ai'
+  'app'
+  'art'
+  'biz'
+  'blog'
+  'cloud'
+  'com'
+  'company'
+  'dev'
+  'digital'
+  'eu'
+  'expert'
+  'fr'
+  'global'
+  'group'
+  'in'
+  'info'
+  'io'
+  'it'
+  'live'
+  'mc'
+  'me'
+  'net'
+  'online'
+  'org'
+  # 'shop' ## always a network connection errror when performing a whois on .shop
+  'site'
+  'space'
+  'store'
+  'stream'
+  'systems'
+  'tech'
+  'uk'
+  'website'
+  'world'
+  'xyz'
+  'trade'
+  'cc'
 )
 
 IFS=$'\n' DOMAINS=($(sort <<<"${DOMAINS[*]}" | tr '[:upper:]' '[:lower:]'))
@@ -232,28 +251,28 @@ fi
 if [ "$EXTENDED" = true ]; then
   update_tlds
   DOMAINS=()
-	while read line; do
-		THISDOMAIN=$(echo $line | tr '[:upper:]' '[:lower:]')
-		DOMAINS+=($THISDOMAIN)
-	done < ${scriptPath}/extendedalpha
+  while read line; do
+    THISDOMAIN=$(echo $line | tr '[:upper:]' '[:lower:]')
+    DOMAINS+=($THISDOMAIN)
+  done <${scriptPath}/extendedalpha
 fi
 
 if [ "$LIST" = true ]; then
-	ELEMENTS=${#DOMAINS[@]}
-	for ((i = 0; i < $ELEMENTS; i++)); do
-		printf "%-8s\n" "${DOMAINS[${i}]}"
-	done
+  ELEMENTS=${#DOMAINS[@]}
+  for ((i = 0; i < $ELEMENTS; i++)); do
+    printf "%-8s\n" "${DOMAINS[${i}]}"
+  done
   # | column -x
-	exit 0
+  exit 0
 fi
 
 ELEMENTS=${#DOMAINS[@]}
 while (("$#")); do
-	for i in $(seq 0 $((${ELEMENTS}-1))); do
+  for i in $(seq 0 $((${ELEMENTS} - 1))); do
     print_debug "checking ${DOMAINS[${i}]}"
-		check_domain ${DOMAIN_NAME}.${DOMAINS[${i}]}
-	done
-	shift
+    check_domain ${DOMAIN_NAME}.${DOMAINS[${i}]}
+  done
+  shift
 done
 
 # sleep $(($ELEMENTS / 3))
