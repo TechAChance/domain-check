@@ -5,6 +5,7 @@
 
 ####################################################################################################
 AVAILABLE_ONLY=false
+TAKEN_ONLY=false
 EXPORT_CSV=false
 DEBUG=0
 print_debug() {
@@ -20,6 +21,7 @@ usage() {
   echo "  -l : list tlds (no check of availability)"
   echo "  -a : all tlds, not only most common"
   echo "  -i : display 'available' domains only"
+  echo "  -t : display 'taken' domains only"
   echo "  -s : output as csv instead of text"
   echo "  -h : display this help message"
   echo " "
@@ -72,7 +74,7 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   fi
 done
 scriptPath="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-while getopts ":seialh" opt; do
+while getopts ":seitalh" opt; do
   case $opt in
   h)
     usage
@@ -83,6 +85,9 @@ while getopts ":seialh" opt; do
     ;;
   i)
     AVAILABLE_ONLY=true
+    ;;
+  t)
+    TAKEN_ONLY=true
     ;;
   [ae])
     EXTENDED=true
@@ -99,6 +104,11 @@ done
 shift $(($OPTIND - 1))
 if [ "$#" == "0" ] && [ "$LIST" != true ]; then
   echo "No domain to check!"
+  exit 1
+fi
+
+if [ "$AVAILABLE_ONLY" = true ] && [ "$TAKEN_ONLY" = true ]; then
+  echo "-i and -t can not be used at the same time!"
   exit 1
 fi
 
@@ -128,12 +138,13 @@ function check_domain() {
   host $DOMAIN | egrep -q 'not found'
   NOT_FOUND=$?
   if [ $NOT_FOUND -eq 0 ]; then
-    if [ "$EXPORT_CSV" = false ]; then
-      printf "%-${PADDING}s : AVAILABLE\n" "$DOMAIN"
-    else
-      printf "%s;AVAILABLE;\n" "$DOMAIN"
+    if [ "$TAKEN_ONLY" = false ]; then
+      if [ "$EXPORT_CSV" = false ]; then
+        printf "%-${PADDING}s : AVAILABLE\n" "$DOMAIN"
+      else
+        printf "%s;AVAILABLE;\n" "$DOMAIN"
+      fi
     fi
-
   else
     if [ "$AVAILABLE_ONLY" = false ]; then
       # whois $1 | egrep -qi 'Domain not found'
