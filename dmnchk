@@ -134,9 +134,11 @@ function check_domain() {
   local DOMAIN=$1
   local PADDING=$(($DOMAIN_NAME_SIZE + 18))
   ## egrep TO BE IMPROVED
-  ## echo "$WHOIS" | egrep -q 'No match for|NOT FOUND|Not Found|not found|Status: AVAILABLE|^Available|Domain Status: free^|No Data Found|has not been regi|No entri|No Object Found|available for registration|The queried object does not exist|This domain name has not been registered|no matching objects found'
-  host $DOMAIN | egrep -q 'not found'
+  WHOIS=$(who_is $DOMAIN)
+  echo "$WHOIS" | egrep -q 'No match for|NOT FOUND|Not Found|not found|Status: AVAILABLE|^Available|Domain Status: free^|No Data Found|has not been regi|No entri|No Object Found|available for registration|The queried object does not exist|This domain name has not been registered|no matching objects found'
+  #host $DOMAIN | egrep -q 'not found'
   NOT_FOUND=$?
+  # echo "NOT_FOUND : $NOT_FOUND"
   if [ $NOT_FOUND -eq 0 ]; then
     if [ "$TAKEN_ONLY" = false ]; then
       if [ "$EXPORT_CSV" = false ]; then
@@ -148,7 +150,7 @@ function check_domain() {
   else
     if [ "$AVAILABLE_ONLY" = false ]; then
       # whois $1 | egrep -qi 'Domain not found'
-      WHOIS=$(who_is $DOMAIN)
+      # WHOIS=$(who_is $DOMAIN)
       echo "$WHOIS" | egrep -qi 'no whois server'
       NO_WHOIS=$?
       ## If no WHOIS server, then put status as UNKNOWN
@@ -228,6 +230,7 @@ DOMAINS=(
   'global'
   'group'
   'in'
+  'inc'
   'info'
   'io'
   'it'
