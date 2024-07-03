@@ -7,6 +7,7 @@
 AVAILABLE_ONLY=false
 TAKEN_ONLY=false
 EXPORT_CSV=false
+SMALL=false
 DEBUG=0
 print_debug() {
   if [ $DEBUG -eq 1 ]; then
@@ -22,7 +23,7 @@ usage() {
   echo "  -a : all tlds, not only most common"
   echo "  -i : display 'available' domains only"
   echo "  -t : display 'taken' domains only"
-  echo "  -s : output as csv instead of text"
+  echo "  -c : output as csv instead of text"
   echo "  -h : display this help message"
   echo " "
   echo " With no option, the tool will check most common tlds."
@@ -93,6 +94,10 @@ while getopts ":seitalh" opt; do
     EXTENDED=true
     ;;
   s)
+    SMALL=true
+    EXTENDED=false
+    ;;
+  c)
     EXPORT_CSV=true
     ;;
   \?)
@@ -109,6 +114,11 @@ fi
 
 if [ "$AVAILABLE_ONLY" = true ] && [ "$TAKEN_ONLY" = true ]; then
   echo "-i and -t can not be used at the same time!"
+  exit 1
+fi
+
+if [ "$EXTENDED" = true ] && [ "$SMALL" = true ]; then
+  echo "-a and -s can not be used at the same time!"
   exit 1
 fi
 
@@ -212,48 +222,61 @@ function check_domain() {
 ####################################################################################################
 ####################################################################################################
 ## Defaults tlds
-DOMAINS=(
-  'agency'
-  'ai'
-  'app'
-  'art'
-  'biz'
-  'blog'
-  'cloud'
-  'com'
-  'company'
-  'dev'
-  'digital'
-  'eu'
-  'expert'
-  'fr'
-  'global'
-  'group'
-  'in'
-  'inc'
-  'info'
-  'io'
-  'it'
-  'live'
-  'mc'
-  'me'
-  'net'
-  'online'
-  'org'
-  # 'shop' ## always a network connection errror when performing a whois on .shop
-  'site'
-  'space'
-  'store'
-  'stream'
-  'systems'
-  'tech'
-  'uk'
-  'website'
-  'world'
-  'xyz'
-  'trade'
-  'cc'
-)
+if [ "$SMALL" = true ]; then
+  DOMAINS=(
+    'ai'
+    'com'
+    'net'
+    'io'
+    'org'
+  )
+else
+  DOMAINS=(
+    'agency'
+    'ai'
+    'app'
+    'art'
+    'biz'
+    'blog'
+    'cloud'
+    'com'
+    'company'
+    'dev'
+    'digital'
+    'eu'
+    'expert'
+    'fr'
+    'global'
+    'group'
+    'in'
+    'inc'
+    'info'
+    'io'
+    'it'
+    'live'
+    'mc'
+    'me'
+    'net'
+    'network'
+    'online'
+    'one'
+    'org'
+    # 'shop' ## always a network connection errror when performing a whois on .shop
+    'site'
+    'space'
+    'store'
+    'stream'
+    'systems'
+    'tech'
+    'uk'
+    'us'
+    'website'
+    'world'
+    'xyz'
+    'trade'
+    'cc'
+  )
+fi
 
 IFS=$'\n' DOMAINS=($(sort <<<"${DOMAINS[*]}" | tr '[:upper:]' '[:lower:]'))
 unset IFS
